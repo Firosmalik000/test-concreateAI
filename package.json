@@ -1,0 +1,20 @@
+{
+  "name": "test-concreateai",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "fastify-cors": "^6.0.3",
+    "fastify-plugin": "^4.5.1",
+    "fastify-swagger": "^5.1.1",
+    "mongoose": "^8.5.2"
+  }
+}
