@@ -1,13 +1,14 @@
 const Account = require('../models/AccountModel');
 const Transaction = require('../models/TransactionModel');
 
-exports.createAccount = async ({ type }) => {
+exports.createAccount = async ({ type, userId }) => {
   try {
-    if (!type) {
+    if (!type || !userId) {
       throw new Error('Invalid input');
     }
 
     const account = new Account({ type });
+    account.userId = userId;
 
     return await account.save();
   } catch (error) {
@@ -24,20 +25,36 @@ exports.getAccountsByUserId = async (userId) => {
   }
 };
 
-exports.addTransaction = async (accountId, amount, type) => {
+exports.addTransaction = async (req, reply) => {
   try {
+    const token = req.cookies.token;
+    if (!token) {
+      return reply.status(401).send({ message: 'Please login first' });
+    }
+
+    const decoded = jwt.verify(token, 'secretkey');
+    const userId = decoded.userId;
+    const { accountId, amount, type } = req.body;
+
     const account = await Account.findById(accountId);
-    if (!account) throw new Error('Account not found');
+    if (!account) {
+      throw new Error('Account not found');
+    }
 
     // Update balance
     if (type === 'deposit') {
       account.balance += amount;
     } else if (type === 'withdrawal') {
-      if (account.balance < amount) throw new Error('Insufficient funds');
+      if (account.balance < amount) {
+        throw new Error('Insufficient funds');
+      }
       account.balance -= amount;
+    } else {
+      throw new Error('Invalid transaction type');
     }
 
     const transaction = new Transaction({
+      userId,
       accountId,
       amount,
       type,
