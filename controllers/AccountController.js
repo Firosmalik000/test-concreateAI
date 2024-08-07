@@ -1,20 +1,19 @@
 const jwt = require('jsonwebtoken');
-const Account = require('../models/AccountModel');
-const User = require('../models/UserModel');
-const AccountService = require('../services/AccountServices');
-const Transaction = require('../models/TransactionModel');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 async function getAllAccounts(req, reply) {
   try {
-    const accounts = await Account.find()
-      .populate('userId')
-      .populate({
-        path: 'transactions',
-        populate: {
-          path: 'userId',
-          model: 'User',
+    const accounts = await prisma.account.findMany({
+      include: {
+        user: true,
+        transactions: {
+          include: {
+            user: true,
+          },
         },
-      });
+      },
+    });
     reply.send(accounts);
   } catch (err) {
     reply.status(500).send(err);
@@ -27,15 +26,18 @@ async function createAccount(req, reply) {
     return reply.status(401).send({ message: 'Please login first' });
   }
 
-  const decoded = jwt.verify(token, 'secretkey');
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secretkey');
   const userId = decoded.userId;
   try {
     const { type } = req.body;
 
-    const account = await AccountService.createAccount({ type, userId });
-    if (account) {
-      await User.updateOne({ _id: userId }, { $push: { accountType: account._id } });
-    }
+    const account = await prisma.account.create({
+      data: {
+        type,
+        user: { connect: { id: userId } },
+      },
+    });
+
     reply.status(201).send(account);
   } catch (err) {
     console.error(err);
@@ -49,7 +51,7 @@ const addTransaction = async (req, reply) => {
     return reply.status(401).send({ message: 'Please login first' });
   }
 
-  const decoded = jwt.verify(token, 'secretkey');
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secretkey');
   const userId = decoded.userId;
   const { accountId, amount, type } = req.body;
 
@@ -60,32 +62,47 @@ const addTransaction = async (req, reply) => {
     }
 
     // Find the account
-    const account = await Account.findOne({ _id: accountId, userId: userId });
-    if (!account) return reply.status(404).send({ message: 'Account not found or does not belong to the user' });
+    const account = await prisma.account.findUnique({
+      where: { id: accountId },
+    });
+
+    if (!account || account.userId !== userId) {
+      return reply.status(404).send({ message: 'Account not found or does not belong to the user' });
+    }
 
     // Check transaction type and update balance
+    let newBalance = account.balance;
     if (type === 'deposit') {
-      account.balance += amount;
+      newBalance += amount;
     } else if (type === 'withdrawal') {
-      if (account.balance < amount) return reply.status(400).send({ message: 'Insufficient funds' });
-      account.balance -= amount;
+      if (newBalance < amount) {
+        return reply.status(400).send({ message: 'Insufficient funds' });
+      }
+      newBalance -= amount;
     } else {
       return reply.status(400).send({ message: 'Invalid transaction type' });
     }
 
-    // Save the transaction
-    const transaction = new Transaction({
-      userId: userId,
-      accountId,
-      amount,
-      type,
+    // Create the transaction
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId,
+        accountId,
+        amount,
+        type,
+      },
     });
 
-    await transaction.save();
-
-    // Update account with new transaction
-    account.transactions.push(transaction._id);
-    await account.save();
+    // Update the account balance
+    await prisma.account.update({
+      where: { id: accountId },
+      data: {
+        balance: newBalance,
+        transactions: {
+          connect: { id: transaction.id },
+        },
+      },
+    });
 
     reply.status(201).send({ message: 'Transaction successfully added', data: transaction });
   } catch (error) {
