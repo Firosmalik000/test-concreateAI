@@ -60,8 +60,8 @@ const addTransaction = async (req, reply) => {
     }
 
     // Find the account
-    const account = await Account.findById(accountId);
-    if (!account) return reply.status(404).send({ message: 'Account not found' });
+    const account = await Account.findOne({ _id: accountId, userId: userId });
+    if (!account) return reply.status(404).send({ message: 'Account not found or does not belong to the user' });
 
     // Check transaction type and update balance
     if (type === 'deposit') {
@@ -72,8 +72,6 @@ const addTransaction = async (req, reply) => {
     } else {
       return reply.status(400).send({ message: 'Invalid transaction type' });
     }
-
-    // Save the account
 
     // Save the transaction
     const transaction = new Transaction({
@@ -94,6 +92,7 @@ const addTransaction = async (req, reply) => {
     reply.status(500).send({ message: error.message });
   }
 };
+
 module.exports = {
   getAllAccounts,
   createAccount,
