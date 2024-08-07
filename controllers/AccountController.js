@@ -1,4 +1,6 @@
+const jwt = require('jsonwebtoken');
 const Account = require('../models/AccountModel');
+const User = require('../models/UserModel');
 const AccountService = require('../services/AccountServices');
 
 async function getAllAccounts(req, reply) {
@@ -10,40 +12,20 @@ async function getAllAccounts(req, reply) {
   }
 }
 
-// async function createAccount(req, reply) {
-//   const { userId } = req.user.userId;
-//   const { type } = req.body;
-//   try {
-//     const account = AccountService.createAccount({ userId, type });
-//     reply.status(201).send(account);
-//   } catch (err) {
-//     reply.status(500).send(err);
-//   }
-// }
+async function createAccount(req, reply) {
+  try {
+    const { type } = req.body;
 
-// async function getAccountsByUserId(userId) {
-//   const { userId } = req.params;
-//   try {
-//     const accounts = await accountService.getAccountsByUserId(userId);
-//     reply.send(accounts);
-//   } catch (error) {
-//     reply.code(400).send({ error: error.message });
-//   }
-// }
+    const account = await AccountService.createAccount({ type });
 
-// async function addTransaction(req, reply) {
-//   const { accountId, amount, type } = req.body;
-//   try {
-//     const result = await accountService.addTransaction(accountId, amount, type);
-//     reply.send(result);
-//   } catch (error) {
-//     reply.code(400).send({ error: error.message });
-//   }
-// }
+    reply.status(201).send(account);
+  } catch (err) {
+    console.error(err);
+    reply.status(500).send(err);
+  }
+}
 
 module.exports = {
   getAllAccounts,
-  //   createAccount,
-  //   addTransaction,
-  //   getAccountsByUserId,
+  createAccount,
 };

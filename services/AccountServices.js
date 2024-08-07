@@ -1,11 +1,17 @@
 const Account = require('../models/AccountModel');
 const Transaction = require('../models/TransactionModel');
 
-exports.createAccount = async (userId, type) => {
+exports.createAccount = async ({ type }) => {
   try {
-    const account = new Account({ userId, type });
+    if (!type) {
+      throw new Error('Invalid input');
+    }
+
+    const account = new Account({ type });
+
     return await account.save();
   } catch (error) {
+    console.error('Error creating account:', error);
     throw new Error('Error creating account');
   }
 };
