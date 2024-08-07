@@ -1,40 +1,6 @@
 const User = require('../models/UserModel');
 const bcrypt = require('bcrypt');
-
-// // controllers/userController.js
-// exports.register = async (req, reply) => {
-//   const { email, password } = req.body;
-//   console.log('Request Body:', req.body);
-//   try {
-//     const hashedPassword = await bcrypt.hash(password, 10);
-//     const user = new User({ email, password: hashedPassword });
-//     await user.save();
-//     reply.send(user);
-//   } catch (error) {
-//     reply.code(400).send({ error: 'Email already exists' });
-//   }
-// };
-
-// exports.login = async (req, reply) => {
-//   try {
-//     const user = await User.findOne({ email: req.body.email });
-//     if (!user) {
-//       return reply.status(401).send({ message: 'Invalid email or password' });
-//     }
-
-//     const isMatch = await bcrypt.compare(req.body.password, user.password);
-//     if (!isMatch) {
-//       return reply.status(401).send({ message: 'Invalid email or password' });
-//     }
-//     const token = jwt.sign({ userId: user._id }, 'secretkey', {
-//       expiresIn: '1h',
-//     });
-
-//     reply.send({ message: 'Login successful', user, token });
-//   } catch (error) {
-//     reply.status(500).send({ message: error.message });
-//   }
-// };
+const jwt = require('jsonwebtoken');
 
 async function getAllUsers(req, reply) {
   try {
@@ -78,9 +44,56 @@ async function deleteUser(req, reply) {
   }
 }
 
+async function Login(req, reply) {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return reply.status(401).send({ message: 'Invalid email or password' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return reply.status(401).send({ message: 'Invalid email or password' });
+    }
+    const token = jwt.sign({ userId: user._id, user: user }, 'secretkey', {
+      expiresIn: '1h',
+    });
+    reply.cookie('token', token, { httpOnly: true }).send({ message: 'Login successful', user, token });
+  } catch (err) {
+    reply.status(500).send(err);
+  }
+}
+
+async function Me(req, reply) {
+  try {
+    const token = req.cookies.token;
+    if (!token) {
+      return reply.status(401).send({ message: 'Please login first' });
+    }
+    const decoded = jwt.verify(token, 'secretkey');
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return reply.status(404).send({ message: 'User not found' });
+    }
+
+    reply.send({ token, user });
+  } catch (err) {
+    console.log(err);
+    reply.status(401).send({ message: 'Unauthorized' });
+  }
+}
+
+async function Logout(req, reply) {
+  reply.clearCookie('token').send({ message: 'Logout successful' });
+}
+
 module.exports = {
   getAllUsers,
   createUser,
   getUserById,
   deleteUser,
+  Login,
+  Me,
+  Logout,
 };
