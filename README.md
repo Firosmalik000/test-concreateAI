@@ -34,8 +34,8 @@ This application is built with Node.js, Prisma, Fastify, and MongoDB. It provide
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/test-concreateai.git
-   cd test-concreateai
+   git clone https://github.com/Firosmalik000/test-concreateAI
+   cd test-concreateAI
    ```
 
 2. Create a `.env` file in the root directory and add your environment variables:
@@ -96,15 +96,6 @@ Run the following command to generate Prisma client and apply database migration
 
 ```bash
 npx prisma generate
-```
-
-## Example `.env` File
-
-```bash
-DATABASE_URL="mongodb://localhost:27017/mydatabase"
-JWT_SECRET="your_jwt_secret_key"
-NODE_ENV="development"
-PORT=5000
 ```
 
 ## Running Locally
