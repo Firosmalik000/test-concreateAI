@@ -41,9 +41,7 @@ This application is built with Node.js, Prisma, Fastify, and MongoDB. It provide
 2. Create a `.env` file in the root directory and add your environment variables:
 
    ```bash
-   DATABASE_URL="mongodb://localhost:27017/mydatabase"
-   JWT_SECRET="your_jwt_secret_key"
-   NODE_ENV="development"
+   DATABASE_URL="mongodb://root:root123@ac-ufjoenx-shard-00-00.wv5qisj.mongodb.net:27017,ac-ufjoenx-shard-00-01.wv5qisj.mongodb.net:27017,ac-ufjoenx-shard-00-02.wv5qisj.mongodb.net:27017/TestConcreateAI?ssl=true&replicaSet=atlas-xeklsr-shard-0&authSource=admin&retryWrites=true&w=majority"
    PORT=5000
    ```
 
